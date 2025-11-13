@@ -10,8 +10,16 @@ import (
 
 // SetupRequire sets up the require function for module loading
 func SetupRequire(vm *goja.Runtime, currentDir string) error {
-	// Create module cache
-	cache := vm.NewObject()
+	// Get or create module cache
+	var cache *goja.Object
+	cacheVal := vm.Get("__moduleCache")
+	if cacheVal != nil && !goja.IsUndefined(cacheVal) {
+		cache = cacheVal.ToObject(vm)
+	}
+
+	if cache == nil {
+		cache = vm.NewObject()
+	}
 
 	// Create require function
 	require := func(call goja.FunctionCall) goja.Value {
@@ -123,8 +131,8 @@ func SetupRequire(vm *goja.Runtime, currentDir string) error {
 		return moduleObj.Get("exports")
 	}
 
-	requireObj := vm.NewObject()
-	requireObj.Set("cache", cache)
+	// Store cache globally so RegisterModule can access it
+	vm.Set("__moduleCache", cache)
 
 	vm.Set("require", require)
 	vm.GlobalObject().Set("require", require)

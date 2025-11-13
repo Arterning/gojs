@@ -37,16 +37,16 @@ func New() *Runtime {
 	// Setup console
 	modules.SetupConsole(vm)
 
-	// Setup built-in modules (fs, path)
+	// Setup require function first (defaults to current directory)
+	if err := modules.SetupRequire(vm, "."); err != nil {
+		panic(err)
+	}
+
+	// Setup built-in modules (fs, path) - these will be registered in the require cache
 	if err := modules.SetupFS(vm); err != nil {
 		panic(err)
 	}
 	if err := modules.SetupPath(vm); err != nil {
-		panic(err)
-	}
-
-	// Setup require function (defaults to current directory)
-	if err := modules.SetupRequire(vm, "."); err != nil {
 		panic(err)
 	}
 

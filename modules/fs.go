@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -167,27 +168,22 @@ func SetupFS(vm *goja.Runtime) error {
 
 // RegisterModule registers a module in the require system
 func RegisterModule(vm *goja.Runtime, name string, module *goja.Object) error {
-	// Get or create require.cache
-	require := vm.Get("require")
-	if require == nil || goja.IsUndefined(require) {
-		requireObj := vm.NewObject()
-		cache := vm.NewObject()
-		requireObj.Set("cache", cache)
-		vm.Set("require", requireObj)
-		require = requireObj
+	// Get the module cache
+	cacheVal := vm.Get("__moduleCache")
+	if cacheVal == nil || goja.IsUndefined(cacheVal) {
+		// Cache not initialized yet
+		return fmt.Errorf("module cache not initialized - call SetupRequire first")
 	}
 
-	requireObj := require.ToObject(vm)
-	cache := requireObj.Get("cache")
-	if cache == nil || goja.IsUndefined(cache) {
-		cache = vm.NewObject()
-		requireObj.Set("cache", cache)
+	cache := cacheVal.ToObject(vm)
+	if cache == nil {
+		return fmt.Errorf("invalid module cache")
 	}
 
-	cacheObj := cache.ToObject(vm)
+	// Create module object with exports
 	moduleObj := vm.NewObject()
 	moduleObj.Set("exports", module)
-	cacheObj.Set(name, moduleObj)
+	cache.Set(name, moduleObj)
 
 	return nil
 }
